@@ -192,3 +192,186 @@ void reset(void){
 		 Nokia5110_PrintBMP(car.x, car.y, Car, 0);
   Nokia5110_DisplayBuffer();      
 }
+
+void GameOver(){
+	Timer0_disable();
+	Timer1_disable();
+	Timer2_disable();
+	Nokia5110_Clear();
+  Nokia5110_SetCursor(1, 0);
+  Nokia5110_OutString("GAME OVER");
+	Nokia5110_SetCursor(2, 2);
+	Nokia5110_OutString("Score:");
+	Nokia5110_SetCursor(1, 4);
+	Nokia5110_OutUDec(MAX_SCORE);
+	while(1);
+}
+
+void lifes(void){
+	if(car.life == 4){
+		GPIO_PORTB_DATA_R = 0x0E;
+	}
+	if(car.life == 3){
+		GPIO_PORTB_DATA_R = 0x06;
+	}
+	if(car.life == 2){
+		GPIO_PORTB_DATA_R = 0x02;
+	}
+	if(car.life == 1){
+		GPIO_PORTB_DATA_R = 0x00;		
+		GameOver();
+	}
+}
+
+char check_en1()
+{
+	
+	if ( (ENEMYH + en1_y)>=(47 - PLAYERH ) && ((en1_x>car.x-ENEMYW) && (en1_x<car.x+PLAYERW-3)) )
+	{
+		//Timer2_disable();
+		which_enemy=1;
+		//lifes();
+    reset();
+		return 1;
+	}
+	
+	return 0;
+}
+
+char check_en2()
+{
+	if ( (ENEMYH + en2_y)>=(47 - PLAYERH ) && (((en2_x +28)>(car.x-ENEMYW)) &&((en2_x +28)<(car.x+PLAYERW-3)) ))
+	{
+		//Delay100ms(2);
+		which_enemy=2;
+		//lifes();
+		reset();
+		return 1;
+	}
+	
+	return 0;
+}
+
+char check_en3()
+{
+	if ( (ENEMYH + en3_y)>=(47 - PLAYERH ) && (((en3_x +56)>(car.x-ENEMYW)) && ((en3_x +56)<(car.x+PLAYERW-3)) ))
+	{
+		//Delay100ms(2);
+		which_enemy=3;
+		//lifes();
+		reset();
+		
+		
+		return 1;
+	}
+	
+	return 0;
+}
+
+void control_Enemy1()
+{
+	if(en1_y >= 47 -ENEMYH)
+	{
+		en1_y = 0;
+		en1_x = rand() % 12;
+		MAX_SCORE +=2;
+	}
+	else
+	{
+		en1_y += 1;
+		
+	}
+	
+	Nokia5110_ClearBuffer();
+	
+	Nokia5110_PrintBMP(en1_x, ENEMYW - 1+en1_y, enemy2, 0);	 
+	Nokia5110_PrintBMP(en2_x+28, ENEMYW - 1+en2_y , enemy2, 0);	
+	Nokia5110_PrintBMP(en3_x+56, ENEMYW - 1+en3_y , enemy2, 0);
+	Nokia5110_PrintBMP(car.x, 47, Car, 0);
+	Nokia5110_DisplayBuffer();   
+	check_en1();
+	lifes();
+}
+
+
+void control_Enemy2()
+{
+	
+	if(en2_y >= 47 -ENEMYH)
+	{
+		en2_y = 0;
+		en2_x = rand() % 12;
+		MAX_SCORE +=2;
+	}
+	else
+	{
+		en2_y +=1;
+	}
+	
+	Nokia5110_ClearBuffer();
+	
+	Nokia5110_PrintBMP(en1_x, ENEMYW - 1+en1_y, enemy2, 0);
+  Nokia5110_PrintBMP(en2_x+28, ENEMYW - 1+en2_y , enemy2, 0);	
+	Nokia5110_PrintBMP(en3_x+56, ENEMYW - 1+en3_y , enemy2, 0);
+	Nokia5110_PrintBMP(car.x, 47, Car, 0);
+	Nokia5110_DisplayBuffer();   
+	check_en2();
+	lifes();
+}
+
+
+void control_Enemy3()
+{
+	
+	if(en3_y >= 47-ENEMYH)
+	{
+		en3_y = 0;
+		en3_x = rand() % 12;
+		MAX_SCORE +=2;
+	}
+	else
+	{
+		en3_y +=1;
+	}
+	
+	Nokia5110_ClearBuffer();
+	
+	Nokia5110_PrintBMP(en1_x, ENEMYW - 1+en1_y, enemy2, 0);
+	Nokia5110_PrintBMP(en2_x+28, ENEMYW - 1+en2_y , enemy2, 0);	
+	Nokia5110_PrintBMP(en3_x+56, ENEMYW - 1+en3_y , enemy2, 0);
+	Nokia5110_PrintBMP(car.x, 47, Car, 0);
+	Nokia5110_DisplayBuffer();   
+	check_en3();
+	lifes();
+}
+
+
+void Timer2A_Handler(void){ 
+  TIMER2_ICR_R = 0x00000001;   // acknowledge timer2A timeout
+  control_Enemy3();
+}
+
+void Timer1A_Handler(void){ 
+  TIMER1_ICR_R = 0x00000001;   // acknowledge timer2A timeout
+  control_Enemy2();
+}
+
+void Timer0A_Handler(void){ 
+  TIMER0_ICR_R = 0x00000001;   // acknowledge timer2A timeout
+  control_Enemy1();
+}
+
+void GPIOPortF_Handler(void){
+	if(GPIO_PORTF_RIS_R &(1<<0) && car.x>=5){
+		GPIO_PORTF_ICR_R |= (1<<0);
+		car.x-=5;
+		Delay100ms(1);
+	}	
+	
+	if(GPIO_PORTF_RIS_R &(1<<4) && car.x<84-PLAYERW-5 ){
+		GPIO_PORTF_ICR_R |= (1<<4);
+		car.x+=5;
+		Delay100ms(1);
+	}	
+}
+
